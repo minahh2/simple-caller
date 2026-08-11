@@ -97,3 +97,17 @@ setInterval(checkAndSendPush, 30000);
 
 // Run once immediately
 checkAndSendPush();
+
+// --- Dummy HTTP Server for Coolify Health Checks ---
+// Coolify requires a port to be exposed. We spin up a tiny server to satisfy it.
+import http from 'http';
+
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Push Notification Worker is running!\n');
+});
+
+server.listen(PORT, () => {
+  console.log(`Dummy HTTP server listening on port ${PORT} for Coolify health checks.`);
+});
