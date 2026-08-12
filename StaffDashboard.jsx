@@ -215,7 +215,7 @@ export default function StaffDashboard({ venueId: propVenueId }) {
           if ('Notification' in window && Notification.permission === 'granted') {
             const currentLang = langRef.current;
             const buttonsDict = actionButtonsRef.current;
-            const buttonLabel = buttonsDict[payload.new.action] ? buttonsDict[payload.new.action][`label_${currentLang}`] : payload.new.action;
+            const buttonLabel = buttonsDict[payload.new.button_key] ? buttonsDict[payload.new.button_key][`label_${currentLang}`] : payload.new.button_key;
             const tableLabel = tableData?.label || `${currentLang === 'ar' ? 'طاولة' : 'Table'}`;
             
             const title = `${currentLang === 'ar' ? 'طلب جديد من' : 'New request from'} ${tableLabel}`;
