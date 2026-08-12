@@ -26,6 +26,7 @@ export default function StaffDashboard({ venueId: propVenueId }) {
   const [actionButtons, setActionButtons] = useState({});
   const [venueSettings, setVenueSettings] = useState(null);
   const [confirmDismissAllModal, setConfirmDismissAllModal] = useState(null);
+  const [showAndroidWarning, setShowAndroidWarning] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -174,6 +175,14 @@ export default function StaffDashboard({ venueId: propVenueId }) {
       }
     }
     loadVenue();
+
+    // Check if Android PWA and hasn't dismissed warning
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const hasSeenWarning = localStorage.getItem('android_battery_warning_seen');
+    if (isAndroid && isStandalone && !hasSeenWarning) {
+      setShowAndroidWarning(true);
+    }
   }, [user, authLoading, propVenueId, navigate]);
 
   useEffect(() => {
@@ -671,6 +680,46 @@ export default function StaffDashboard({ venueId: propVenueId }) {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      {/* Android Battery Optimization Warning Modal */}
+      <AnimatePresence>
+        {showAndroidWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative"
+            >
+              <div className="flex items-center gap-3 text-amber-500 mb-4">
+                <AlertTriangle className="w-6 h-6" />
+                <h3 className="text-lg font-bold">
+                  {lang === 'ar' ? 'تنبيه هام لأجهزة أندرويد' : 'Important Android Notice'}
+                </h3>
+              </div>
+              <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+                {lang === 'ar' 
+                  ? 'لضمان وصول الإشعارات بشكل فوري حتى عند إغلاق التطبيق، يرجى الذهاب إلى إعدادات الهاتف > التطبيقات > QR Caller > البطارية، واختيار "غير مقيد" (Unrestricted). وتجنب إغلاق التطبيق بمسحه للأعلى.' 
+                  : 'To ensure you receive notifications reliably even when the app is closed, please go to your phone Settings > Apps > QR Caller > Battery, and set it to "Unrestricted". Also, avoid force-closing the app by swiping it up.'}
+              </p>
+              <Button
+                variant="primary"
+                className="w-full bg-amber-600 hover:bg-amber-500 text-white border-none"
+                onClick={() => {
+                  localStorage.setItem('android_battery_warning_seen', 'true');
+                  setShowAndroidWarning(false);
+                }}
+              >
+                {lang === 'ar' ? 'فهمت ذلك' : 'I Understand'}
+              </Button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
