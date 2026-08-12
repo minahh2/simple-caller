@@ -215,7 +215,7 @@ export default function StaffDashboard({ venueId: propVenueId }) {
           if ('Notification' in window && Notification.permission === 'granted') {
             const currentLang = langRef.current;
             const buttonsDict = actionButtonsRef.current;
-            const buttonLabel = buttonsDict[payload.new.action_key] ? buttonsDict[payload.new.action_key][`label_${currentLang}`] : payload.new.action_key;
+            const buttonLabel = buttonsDict[payload.new.action] ? buttonsDict[payload.new.action][`label_${currentLang}`] : payload.new.action;
             const tableLabel = tableData?.label || `${currentLang === 'ar' ? 'طاولة' : 'Table'}`;
             
             const title = `${currentLang === 'ar' ? 'طلب جديد من' : 'New request from'} ${tableLabel}`;
@@ -283,41 +283,7 @@ export default function StaffDashboard({ venueId: propVenueId }) {
     }
   }, [calls, stopAlarm]);
 
-  useEffect(() => {
-    let notificationInterval;
 
-    const spawnNotification = () => {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(lang === 'ar' ? 'طلبات غير مكتملة' : 'Unacknowledged Requests', {
-          body: lang === 'ar' ? 'يوجد طلبات بانتظار استجابتك في بوابة الموظفين.' : 'You have pending calls waiting for your response.',
-          icon: '/icon-192.png'
-        });
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && calls.length > 0) {
-        clearInterval(notificationInterval);
-        notificationInterval = setInterval(spawnNotification, 30000); // 30 seconds
-      } else {
-        clearInterval(notificationInterval);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    if (document.visibilityState === 'hidden' && calls.length > 0) {
-      clearInterval(notificationInterval);
-      notificationInterval = setInterval(spawnNotification, 30000);
-    } else {
-      clearInterval(notificationInterval);
-    }
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(notificationInterval);
-    };
-  }, [calls.length, lang]);
 
   async function fetchActiveCalls() {
     const { data } = await supabase
