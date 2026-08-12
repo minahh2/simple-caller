@@ -32,9 +32,10 @@ async function checkAndSendPush() {
 
     const { data: calls, error: callsError } = await supabase
       .from('service_calls')
-      .select('venue_id, id, created_at')
+      .select('venue_id, id, created_at, action, tables_devices (label)')
       .eq('status', 'pending')
-      .lte('created_at', fifteenSecondsAgo);
+      .lte('created_at', fifteenSecondsAgo)
+      .order('created_at', { ascending: true });
 
     if (callsError) throw callsError;
     if (!calls || calls.length === 0) return;
@@ -44,7 +45,9 @@ async function checkAndSendPush() {
 
     // For each venue, get their push subscriptions and send a notification
     for (const venueId of uniqueVenues) {
-      const pendingCount = calls.filter(c => c.venue_id === venueId).length;
+      const venueCalls = calls.filter(c => c.venue_id === venueId);
+      const oldestCall = venueCalls[0];
+      const pendingCount = venueCalls.length;
       
       const { data: subscriptions, error: subError } = await supabase
         .from('push_subscriptions')
@@ -58,9 +61,25 @@ async function checkAndSendPush() {
 
       if (!subscriptions || subscriptions.length === 0) continue;
 
+      // Try to get the translated action label
+      const { data: actionData } = await supabase
+        .from('action_buttons')
+        .select('label_en, label_ar')
+        .eq('venue_id', venueId)
+        .eq('button_key', oldestCall.action)
+        .maybeSingle();
+
+      const actionText = actionData ? (actionData.label_en || actionData.label_ar) : oldestCall.action;
+      const tableLabel = oldestCall.tables_devices?.label || 'Unknown';
+      
+      let bodyText = `Requesting: ${actionText}`;
+      if (pendingCount > 1) {
+        bodyText += ` (and ${pendingCount - 1} other call${pendingCount > 2 ? 's' : ''})`;
+      }
+
       const payload = JSON.stringify({
-        title: "Unacknowledged Calls",
-        body: `You have ${pendingCount} unacknowledged call(s) waiting.`,
+        title: `New request from Table ${tableLabel}`,
+        body: bodyText,
         url: "/#/staff"
       });
 
