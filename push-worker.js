@@ -32,7 +32,7 @@ async function checkAndSendPush() {
 
     const { data: calls, error: callsError } = await supabase
       .from('service_calls')
-      .select('venue_id, id, created_at, action, tables_devices (label)')
+      .select('venue_id, id, created_at, button_key, tables_devices (label)')
       .eq('status', 'pending')
       .lte('created_at', fifteenSecondsAgo)
       .order('created_at', { ascending: true });
@@ -66,10 +66,10 @@ async function checkAndSendPush() {
         .from('action_buttons')
         .select('label_en, label_ar')
         .eq('venue_id', venueId)
-        .eq('button_key', oldestCall.action)
+        .eq('button_key', oldestCall.button_key)
         .maybeSingle();
 
-      const actionText = actionData ? (actionData.label_en || actionData.label_ar) : oldestCall.action;
+      const actionText = actionData ? (actionData.label_en || actionData.label_ar) : oldestCall.button_key;
       const tableLabel = oldestCall.tables_devices?.label || 'Unknown';
       
       let bodyText = `Requesting: ${actionText}`;
